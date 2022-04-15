@@ -3,7 +3,7 @@
 import numpy
 import csv
 
-def CsvToNumpy(csvFilePath):
+def CsvToNumpy(csvFilePath):#将Csv数据集文件转换为Numpy数组数据集
     with open(csvFilePath,encoding="utf-8") as csvFile:
         reader = csv.reader(csvFile)
         csvList = []
