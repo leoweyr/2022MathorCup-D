@@ -2,6 +2,7 @@
 
 import DataSummon
 import Convert
+import os
 
 '''
 import threading
@@ -108,21 +109,55 @@ def Op_TotalCoordinate(): #生成题目环境全部坐标集并输出为CSV数�
     totalCoordinate = DataSummon.TotalCoordinate()
     Convert.ListToCsv("./Data","题目环境全部坐标集.csv",['x','y'],totalCoordinate)
 
-def Op_AbleCoordinate():
+def Op_AbleCoordinate(): #生成可以建站的坐标集并输出为CSV数据集文件
     totalPosition = Convert.CsvToList("./Data/题目环境全部坐标集.csv")
-    banPosition = Convert.CsvToList("./Data/题目环境全部坐标集.csv")
-    filterBanCoordinate = DataSummon.FilterBanCoordinate(totalPosition,banPosition)
+    banPosition = Convert.CsvToList("./Data/不能建站的坐标集.csv")
+    filterBanCoordinate = DataSummon.FilterCoordinate(totalPosition,banPosition) #过滤掉不能建站的坐标集
     weakCoverCoordinate = Convert.CsvToList("./TopicData/附件1 弱覆盖栅格数据(筛选).csv")
-    weakCoverPosition = [] #弱覆盖点的坐标集
-    weakCoverTraffic = [] #弱覆盖点的业务量集
-    for coordinate in weakCoverCoordinate: #将弱覆盖点的坐标集和业务量集分开，但索引是一一对应的
-        weakCoverPosition.append((coordinate[0],coordinate[1]))
-        weakCoverTraffic.append(coordinate[2])
-    ableCoordinate = DataSummon.AbleCoordinate(filterBanCoordinate,weakCoverPosition,weakCoverTraffic)
+    ableCoordinate = DataSummon.AbleCoordinate(filterBanCoordinate,weakCoverCoordinate)
+    Convert.ListToCsv("./Data","可以建站的坐标集.csv",['x','y','traffic'],ableCoordinate)
 
+def Op_MeetConditionCoordinate: #生成满足题目条件的建站选址坐标集并输出为CSV数据集文件
+    ableCoordinate = Convert.CsvToList("./Data/可以建站的坐标集.csv")
+    weakCoverCoordinate = Convert.CsvToList("./TopicData/附件1 弱覆盖栅格数据(筛选).csv")
+    #算出全部弱覆盖区域的业务量总和
+    totalTraffic = 0
+    for weakPosition in weakCoverCoordinate:
+        totalTraffic = float(totalTraffic) + float(weakPosition[2])
+    #生成全部基站为宏基站且满足条件的建站选址坐标集 - 方案一
+    indexDatum = 0
+    id = 0
+    while(indexDatum <= len(ableCoordinate)):
+        indexDatumNext = indexDatum + 1
+        while(indexDatumNext <= len(ableCoordinate)):
+            meetCondition = DataSummon.MeetConditionCoordinate_highCost(ableCoordinate,weakCoverCoordinate,totalTraffic,indexDatum,indexDatumNext)
+            if(meetCondition != False):
+                sumCost = meetCondition[0]
+                Convert.ListToCsv("./StationData/highCost",id + "id" + sumCost + ".csv",['x','y'],meetCondition[1])
+                id += 1
+            indexDatumNext += 1
+        indexDatum += 1
+    DataSummon.CostSort("./StationData/highCost")
+
+    #生成全部基站为微基站且满足条件的建站选址坐标集 - 方案二
+    indexDatum = 0
+    id = 0
+    while (indexDatum <= len(ableCoordinate)):
+        indexDatumNext = indexDatum + 1
+        while (indexDatumNext <= len(ableCoordinate)):
+            meetCondition = DataSummon.MeetConditionCoordinate_lowCost(ableCoordinate, weakCoverCoordinate,
+                                                                        totalTraffic, indexDatum, indexDatumNext)
+            if (meetCondition != False):
+                sumCost = meetCondition[0]
+                Convert.ListToCsv("./StationData/lowCost", id + "id" + sumCost + ".csv", ['x', 'y'], meetCondition[1])
+                id += 1
+            indexDatumNext += 1
+        indexDatum += 1
+    DataSummon.CostSort("./StationData/lowCost")
 
 
 if __name__ == '__main__':
     Op_TotalBanCoordinate()
     Op_TotalCoordinate()
     Op_AbleCoordinate()
+    Op_MeetConditionCoordinate()

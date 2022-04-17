@@ -31,29 +31,137 @@ def TotalCoordinate(positionRange=([0,0],[2499,2499])): #生成题目环境全�
     print("数据集 - 题目环境全部坐标集生成完成！")
     return totalPositionList
 
-def FilterBanCoordinate(totalPosition,banPosition): #生成可以建站的坐标集
-    filterBanCoordinate = [] #可以建站的坐标集
+def FilterCoordinate(totalPosition,unincludePosition): #生成按条件过滤不包含规定坐标集的坐标集
+    filterCoordinate = [] #不包含规定坐标集的坐标集
     rowID = 0
     for row in totalPosition:
-        if row not in banPosition:
-            filterBanCoordinate.append(row)
+        if row not in unincludePosition:
+            filterCoordinate.append(row)
         rowID += 1
-        print("正在生成可以建站的坐标集：已完成第" + str(rowID) + "组")
-    print("数据集 - 可以建站的坐标集生成完成！")
-    return filterBanCoordinate
+        print("正在生成按条件过滤不包含规定坐标集的坐标集：已完成第" + str(rowID) + "组")
+    print("数据集 - 按条件过滤不包含规定坐标集的坐标集生成完成！")
+    return filterCoordinate
 
-def AbleCoordinate(totalCanPosition,weakCoverPosition,weakCoverTraffic): #给可以建站的每个坐标对象赋予业务量属性
-    ableCoordinate = [] #已添加业务量属性的可建站坐标集
+def GetTraffic(coordinate,weakCoverCoordinate): #给坐标集赋予业务量属性
+    weakCoverPosition = []  # 弱覆盖点的坐标集
+    weakCoverTraffic = []  # 弱覆盖点的业务量集
+    for coordinate in weakCoverCoordinate: #将弱覆盖点的坐标集和业务量集分开，但索引是一一对应的
+        weakCoverPosition.append((coordinate[0],coordinate[1]))
+        weakCoverTraffic.append(coordinate[2])
+    trafficCoordinate = []  # 已添加业务量属性的坐标集
     weakCoverPosition_npa = numpy.array(weakCoverPosition)
     rowID = 0
-    for position in totalCanPosition:
-        #在可建站的坐标集中将弱覆盖点对象赋上对应业务量属性
+    for position in coordinate:
+        # 在坐标集中将弱覆盖点对象赋上对应业务量属性
         if position in weakCoverPosition:
-            weakCoverSearch = numpy.where(weakCoverPosition_npa == [position[0],position[1]])
+            weakCoverSearch = numpy.where(weakCoverPosition_npa == [position[0], position[1]])
             weakCoverIndex = str(weakCoverSearch)[9:9]
-            ableCoordinate.append([position[0],position[1],float(weakCoverTraffic[int(weakCoverIndex)])])
+            trafficCoordinate.append([position[0], position[1], float(weakCoverTraffic[int(weakCoverIndex)])])
         else:
-            ableCoordinate.append([position[0], position[1], 0]) #0并不表示该坐标点业务量为0，而是指不具有业务量属性的非弱覆盖点
+            trafficCoordinate.append([position[0], position[1], 0])  # 0并不表示该坐标点业务量为0，而是指不具有业务量属性的非弱覆盖点
         rowID += 1
-        print("正在给可以建站的坐标集添加业务量属性：已完成第" + str(rowID) + "组")
-    print("数据集 - 可以建站的坐标集业务量属性添加完成！")
+        print("正在给坐标集添加业务量属性：已完成第" + str(rowID) + "组")
+    print("数据集 - 坐标集业务量属性添加完成！")
+    return trafficCoordinate
+
+def AbleCoordinate(totalCanPosition,weakCoverCoordinate): #给可以建站的每个坐标对象赋予业务量属性
+    ableCoordinate = GetTraffic(totalCanPosition,weakCoverCoordinate) #给可建站坐标点赋予业务量属性
+    #以业务量为标准对可建站的坐标集进行降序排序
+    ableCoordinate_index = 0
+    while(ableCoordinate_index < len(ableCoordinate)):
+        ableCoordinate_index += 1
+        indexMove = ableCoordinate_index
+        while(indexMove > 0):
+            if(ableCoordinate[indexMove][2] > ableCoordinate[indexMove - 1][2]):
+                index_backUp - 1
+            else:
+                break
+        ableCoordinate_backup = ableCoordinate[ableCoordinate_index]
+        ableCoordinate.pop(ableCoordinate_index)
+        ableCoordinate.insert(indexMove,ableCoordinate_backup)
+    return ableCoordinate
+
+def MeetConditionCoordinate_highCost(ableCoordinate,weakCoverCoordinate,totalTraffic,indexDatum,indexDatumNext): #生成每个基站皆为宏基站的且满足题目条件的坐标集
+    meetConditionPosition = [] #每个基站皆为宏基站的且满足题目条件的坐标集
+    sumTraffic = 0
+    sumCost = 0
+    index = indexDatum
+    indexLoop = 0
+    while(index < len(ableCoordinate)):
+        if(indexLoop == 1):
+            index = indexDatumNext
+        positionX = ableCoordinate[index][0]
+        positionY = ableCoordinate[index][1]
+        stationTraffic = ableCoordinate[index][2]
+        meetConditionPosition.append((positionX,positionY))
+        sumCost += 10
+        sumTraffic = float(sumTraffic) + float(stationTraffic)
+        #获取每个被覆盖点的业务量
+        coverCoordinate = ConditionJudge.CoverCoordinate(positionX,positionY,30)
+        coverCoordinate = GetTraffic(coverCoordinate,weakCoverCoordinate)
+        for coverPosition in coverCoordinate:
+            coverTracfic = coverPosition[2]
+            sumTraffic = float(sumTraffic) + float(coverTracfic)
+        ableCoordinate_new = []
+        for ablePosition in ableCoordinate:
+            if ablePosition in coverCoordinate:
+                ableCoordinate_new.append([ablePosition[0],ablePosition[1],0])
+            else:
+                ableCoordinate_new.append([ablePosition[0],ablePosition[1],ablePosition[2]])
+        ableCoordinate = ableCoordinate_new
+        banCoordinate = ConditionJudge.BanCoordinate(positionX,positionY)
+        banCoordinate = GetTraffic(banCoordinate, weakCoverCoordinate)
+        ableCoordinate = FilterCoordinate(ableCoordinate, banCoordinate)
+        if(float(sumTraffic/totalTraffic) >= 0.9): #满足条件停止建站
+            break
+        else:
+            index += 1
+            indexLoop += 1
+    return [sumCost,meetConditionPosition]
+
+def MeetConditionCoordinate_lowCost(ableCoordinate,weakCoverCoordinate,totalTraffic,indexDatum,indexDatumNext): #生成每个基站皆为微基站的且满足题目条件的坐标集
+    meetConditionPosition = [] #每个基站皆为微基站的且满足题目条件的坐标集
+    sumTraffic = 0
+    sumCost = 0
+    index = indexDatum
+    indexLoop = 0
+    while(index < len(ableCoordinate)):
+        if(indexLoop == 1):
+            index = indexDatumNext
+        positionX = ableCoordinate[index][0]
+        positionY = ableCoordinate[index][1]
+        stationTraffic = ableCoordinate[index][2]
+        meetConditionPosition.append((positionX,positionY))
+        sumCost += 1
+        sumTraffic = float(sumTraffic) + float(stationTraffic)
+        #获取每个被覆盖点的业务量
+        coverCoordinate = ConditionJudge.CoverCoordinate(positionX,positionY,10)
+        coverCoordinate = GetTraffic(coverCoordinate,weakCoverCoordinate)
+        for coverPosition in coverCoordinate:
+            coverTracfic = coverPosition[2]
+            sumTraffic = float(sumTraffic) + float(coverTracfic)
+        ableCoordinate_new = []
+        for ablePosition in ableCoordinate:
+            if ablePosition in coverCoordinate:
+                ableCoordinate_new.append([ablePosition[0],ablePosition[1],0])
+            else:
+                ableCoordinate_new.append([ablePosition[0],ablePosition[1],ablePosition[2]])
+        ableCoordinate = ableCoordinate_new
+        banCoordinate = ConditionJudge.BanCoordinate(positionX,positionY)
+        banCoordinate = GetTraffic(banCoordinate, weakCoverCoordinate)
+        ableCoordinate = FilterCoordinate(ableCoordinate, banCoordinate)
+        if(float(sumTraffic/totalTraffic) >= 0.9): #满足条件停止建站
+            return [sumCost,meetConditionPosition]
+        else:
+            index += 1
+            indexLoop += 1
+    return False
+
+def CostSort(DataGatherPath): #排序选出成本最低的建站选址数据集
+    costList = []  # 该方案价格成本集
+    meetConditionList = os.listdir(DataGatherPath)
+    for meetCondition in meetConditionList:
+        meetCondition_cost = str(meetCondition).split("id")
+        costList.append(str(meetCondition_cost[1])[:-4])
+    costList.sort()
+    return  str(costList[0]) + ".csv"
