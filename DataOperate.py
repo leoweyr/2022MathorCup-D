@@ -157,11 +157,40 @@ def MeetConditionCoordinate_lowCost(ableCoordinate,weakCoverCoordinate,totalTraf
             indexLoop += 1
     return False
 
+'''
+def MeetConditionCoordinate_lowCostInsertHighCost(ableCoordinate,highCostCoordinate):#生成从全部基站为宏基站且满足条件的建站选址坐标集中逐步替换插入微基站的坐标集
+    meetConditionPosition = []  # 从原本全部基站为宏基站逐步替换插入微基站且满足题目条件的坐标集
+    sumTraffic = 0
+    ableCoordinate_index = 0
+    highCostCoordinate_index = 0
+    highCostCoordinateLen = len(highCostCoordinate)
+    sumCost = len(highCostCoordinate)*10
+    highCostCoordinate_withIndexID = []
+    while(highCostCoordinate < len(highCostCoordinate_index)):
+        if([ableCoordinate[ableCoordinate_index][0],ableCoordinate[ableCoordinate_index][1]] == highCostCoordinate[highCostCoordinate_index]):
+            highCostCoordinate_withIndexID.append([highCostCoordinate[0],highCostCoordinate[1],ableCoordinate_index])
+            highCostCoordinate_index += 1
+        ableCoordinate_index += 1
+    for IndexID in highCostCoordinate_withIndexID:
+        sumTraffic = float(sumTraffic) + float(ableCoordinate_index(IndexID[2])[2])
+    highCostCoordinate_index = 0
+
+    positionX = highCostCoordinate[highCostCoordinate_index][0]
+    positionY = highCostCoordinate[highCostCoordinate_index][1]
+    ConditionJudge.BanCoordinate(positionX,positionY)
+'''
+
 def CostSort(DataGatherPath): #排序选出成本最低的建站选址数据集
-    costList = []  # 该方案价格成本集
+    def SortByCost(dataName):#ID%id%-COST-%cost%.csv
+        dataAttribute = str(dataName).split("-COST-")
+        cost = str(dataAttribute[1])[:-4]
+        return cost
     meetConditionList = os.listdir(DataGatherPath)
-    for meetCondition in meetConditionList:
-        meetCondition_cost = str(meetCondition).split("id")
-        costList.append(str(meetCondition_cost[1])[:-4])
-    costList.sort()
-    return  str(costList[0]) + ".csv"
+    meetConditionList.sort(key=SortByCost)
+    leastCostDataList = [] #成本最低的建站选址坐标数据集合集，可能存在多个方案成本一样
+    leastCostDataList.append(meetConditionList[0])
+    dataIndex = 1
+    while (SortByCost(meetConditionList[0]) == SortByCost(meetConditionList[dataIndex])):
+            leastCostDataList.append(meetConditionList[dataIndex])
+            dataIndex += 1
+    return  leastCostDataList
