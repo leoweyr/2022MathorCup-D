@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/2022MotherCup-D.iml" filepath="$PROJECT_DIR$/.idea/2022MotherCup-D.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ConditionJudge.py.iml" filepath="$PROJECT_DIR$/.idea/ConditionJudge.py.iml" />
     </modules>
   </component>
 </project>
