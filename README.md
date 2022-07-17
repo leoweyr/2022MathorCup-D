@@ -1,4 +1,4 @@
-# 2022MotherCup-D - 移动通信网络站址规划和区域聚类问题
+# 2022MathorCup-D - 移动通信网络站址规划和区域聚类问题
 
 ![Copyright](https://img.shields.io/badge/Copyright-leoweyr-yellow)
 
@@ -107,7 +107,7 @@
    (1) **工作目录结构介绍**
 
    ```
-   2022MotherCup-D/
+   2022MathorCup-D/
    ├── main.py
    ├── DataOperate.py
    ├── ConditionJudge.py
